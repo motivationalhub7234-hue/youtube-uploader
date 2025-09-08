@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>YouTube Uploader with Geo-block</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    select[multiple] { width: 320px; height: 220px; }
+  </style>
+</head>
+<body>
+  <h2>Login with YouTube</h2>
+  <button onclick="window.open('/auth','popup','width=500,height=600')">Login</button>
+
+  <h2>Accounts</h2>
+  <div id="accounts"></div>
+
+  <h2>Upload Video</h2>
+  <label>Title:</label><br>
+  <input id="title" value="Test Video"><br><br>
+  <label>Description:</label><br>
+  <textarea id="desc">Uploaded via custom app</textarea><br><br>
+  <label>Privacy:</label>
+  <select id="privacy">
+    <option value="public">Public</option>
+    <option value="unlisted">Unlisted</option>
+    <option value="private">Private</option>
+  </select><br><br>
+
+  <label>Blocked Countries:</label><br>
+  <select id="blocked" multiple></select>
+  <p><small>Hold CTRL (Windows) or CMD (Mac) to select multiple</small></p>
+
+  <button onclick="listFiles()">Pick Drive File</button>
+  <div id="files"></div>
+
+  <script>
+    async function loadCountries() {
+      const res = await fetch("https://restcountries.com/v3.1/all");
+      const countries = await res.json();
+      const sel = document.getElementById("blocked");
+      countries.sort((a,b) => a.name.common.localeCompare(b.name.common));
+      countries.forEach(c => {
+        if(c.cca2){
+          const opt = document.createElement("option");
+          opt.value = c.cca2;       // send code to backend
+          opt.text = c.name.common; // display country name
+          sel.appendChild(opt);
+        }
+      });
+    }
+
+    async function listFiles() {
+      const accRes = await fetch("/accounts");
+      const acc = await accRes.json();
+      if (!acc.active) return alert("Login first!");
+      const res = await fetch("/drive/list?email=" + acc.active);
+      const data = await res.json();
+      const div = document.getElementById("files");
+      div.innerHTML = "";
+      data.files.forEach(f => {
+        const btn = document.createElement("button");
+        btn.innerText = "Upload " + f.name;
+        btn.onclick = () => upload(f.id);
+        div.appendChild(btn);
+        div.appendChild(document.createElement("br"));
+      });
+    }
+
+    async function upload(fileId) {
+      const accRes = await fetch("/accounts");
+      const acc = await accRes.json();
+      if (!acc.active) return alert("Login first!");
+
+      const blockedSel = document.getElementById("blocked");
+      const blocked = Array.from(blockedSel.selectedOptions).map(o => o.value);
+
+      const body = {
+        fileId,
+        title: document.getElementById("title").value,
+        description: document.getElementById("desc").value,
+        privacyStatus: document.getElementById("privacy").value,
+        blockedCountries: blocked,
+        email: acc.active
+      };
+      const res = await fetch("/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      alert(JSON.stringify(data));
+    }
+
+    loadCountries();
+  </script>
+</body>
+</html>
