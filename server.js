@@ -10,7 +10,7 @@ app.use(express.static("public"));
 const CLIENT_ID = "776410683982-t58c9iporv3h3coarssfm3asaqppipga.apps.googleusercontent.com";
 const CLIENT_SECRET = "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";
 // Replace YOUR_RENDER_URL with your live Render URL after deploy
-const REDIRECT_URI = "https://YOUR_RENDER_URL/oauth2callback";
+const REDIRECT_URI = "https://youtube-uploader-qa2vkj8co-anas-sidddiqs-projects.vercel.app/oauth2callback";
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
